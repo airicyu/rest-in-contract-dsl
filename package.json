@@ -1,0 +1,33 @@
+{
+  "name": "rest-in-contract-dsl",
+  "version": "0.1.0",
+  "description": "Contract script DSL for rest-in-contract.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/airicyu/rest-in-contract-dsl"
+  },
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "engines": {
+    "node": "6 || 7"
+  },
+  "keywords": [
+    "REST",
+    "API",
+    "Consumer-driven contracts",
+    "Contract",
+    "Stub"
+  ],
+  "author": "Eric Yu",
+  "email": "airic.yu@gmail.com",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "faker": "^4.1.0",
+    "jsonpath": "^0.2.11",
+    "moment": "^2.18.1",
+    "randexp": "^0.4.5",
+    "uuid": "^3.0.1"
+  }
+}
