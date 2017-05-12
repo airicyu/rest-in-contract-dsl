@@ -1,6 +1,6 @@
 {
   "name": "rest-in-contract-dsl",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Contract script DSL for rest-in-contract.",
   "repository": {
     "type": "git",
