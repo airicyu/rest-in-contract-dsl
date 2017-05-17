@@ -391,11 +391,131 @@ const regex = function (pattern) {
     return fn;
 }
 
+const sum = function (...objects) {
+    let sum = new Middleware({
+        type: 'sum',
+        features: [
+            Evaluator
+        ],
+        options: {
+            objects: objects
+        },
+        evaluate: function (context) {
+            let result;
+            let objs = this.options.objects || [];
+            objs.map((obj) => {
+                let retVal = recurrsiveEvaluate(obj).evaluate(context);
+                if (typeof retVal === 'string') {
+                    retVal = parseFloat(retVal);
+                }
+                return retVal;
+            }).forEach((obj) => {
+                if (result === undefined) {
+                    result = obj;
+                } else {
+                    result = result + obj;
+                }
+            });
 
+            return result;
+        },
+        toJsonString: function () {
+            return 'sum(' + this.options.objects.map(obj=>recurrsiveToString(obj)).join(', ') + ')';
+        }
+    });
+    return sum;
+};
+
+const subtract = function (obj1, obj2) {
+    let subtract = new Middleware({
+        type: 'subtract',
+        features: [
+            Evaluator
+        ],
+        options: {
+            obj1,
+            obj2
+        },
+        evaluate: function (context) {
+            let result;
+            let obj1 = recurrsiveEvaluate(this.options.obj1).evaluate(context);
+            obj1 = typeof obj1 === 'string' ? parseFloat(obj1) : obj1;
+            let obj2 = recurrsiveEvaluate(this.options.obj2).evaluate(context);
+            obj2 = typeof obj2 === 'string' ? parseFloat(obj2) : obj2;
+
+            return obj1 - obj2;
+        },
+        toJsonString: function () {
+            return `subtract(${recurrsiveToString(this.options.obj1)}, ${recurrsiveToString(this.options.obj2)})`;
+        }
+    });
+    return subtract;
+};
+
+const multiply = function (...objects) {
+    let multiply = new Middleware({
+        type: 'multiply',
+        features: [
+            Evaluator
+        ],
+        options: {
+            objects: objects
+        },
+        evaluate: function (context) {
+            let result;
+            let objs = this.options.objects || [];
+            objs.map((obj) => {
+                let retVal = recurrsiveEvaluate(obj).evaluate(context);
+                if (typeof retVal === 'string') {
+                    retVal = parseFloat(retVal);
+                }
+                return retVal;
+            }).forEach((obj) => {
+                if (result === undefined) {
+                    result = obj;
+                } else {
+                    result = result * obj;
+                }
+            });
+
+            return result;
+        },
+        toJsonString: function () {
+            return 'multiply(' + this.options.objects.map(obj=>recurrsiveToString(obj)).join(', ') + ')';
+        }
+    });
+    return multiply;
+};
+
+const divide = function (obj1, obj2) {
+    let divide = new Middleware({
+        type: 'divide',
+        features: [
+            Evaluator
+        ],
+        options: {
+            obj1,
+            obj2
+        },
+        evaluate: function (context) {
+            let result;
+            let obj1 = recurrsiveEvaluate(this.options.obj1).evaluate(context);
+            obj1 = typeof obj1 === 'string' ? parseFloat(obj1) : obj1;
+            let obj2 = recurrsiveEvaluate(this.options.obj2).evaluate(context);
+            obj2 = typeof obj2 === 'string' ? parseFloat(obj2) : obj2;
+
+            return obj1 / obj2;
+        },
+        toJsonString: function () {
+            return `divide(${recurrsiveToString(this.options.obj1)}, ${recurrsiveToString(this.options.obj2)})`;
+        }
+    });
+    return divide;
+};
 
 const recurrsiveEvaluate = function (object) {
     let middleware = new Middleware({
-        type: 'recurrsiveCompare',
+        type: 'recurrsiveEvaluate',
         features: [
             Evaluator
         ],
@@ -403,14 +523,16 @@ const recurrsiveEvaluate = function (object) {
             object: object
         },
         evaluate: function (context) {
-            let returnObj = {};
+            let returnObj;
 
             let currObject = this.options.object;
-            if (typeof currObject === 'object' && Array.isArray(currObject)) {
-                returnObj = [];
-            }
-
             if (typeof currObject === 'object') {
+                if (Array.isArray(currObject)) {
+                    returnObj = [];
+                } else {
+                    returnObj = {};
+                }
+
                 if (Middleware.isMiddleware(currObject)) {
                     if (currObject.hasFeature(Evaluator)) {
                         returnObj = currObject.execute({
@@ -420,7 +542,6 @@ const recurrsiveEvaluate = function (object) {
                     } else {
                         returnObj = currObject;
                     }
-
                 } else {
                     for (let key in currObject) {
                         let property = currObject[key]
@@ -434,7 +555,7 @@ const recurrsiveEvaluate = function (object) {
             return returnObj;
         },
         toJsonString: function () {
-            return 'recurrsiveCompare(' + recurrsiveToString(object) + ')';
+            return 'recurrsiveEvaluate(' + recurrsiveToString(object) + ')';
         }
     });
     return middleware;
@@ -450,28 +571,28 @@ const recurrsiveMock = function (object) {
             object: object
         },
         mock: function () {
-            let returnObj = {};
+            let returnObj;
 
             let currObject = this.options.object;
-            if (typeof currObject === 'object' && Array.isArray(currObject)) {
-                returnObj = [];
-            }
-
             if (typeof currObject === 'object') {
+                if (Array.isArray(currObject)) {
+                    returnObj = [];
+                } else {
+                    returnObj = {};
+                }
+
                 if (Middleware.isMiddleware(currObject)) {
                     if (currObject.hasFeature(Mockable)) {
                         returnObj = currObject.mock();
                     } else {
                         returnObj = currObject;
                     }
-
                 } else {
                     for (let key in currObject) {
                         let property = currObject[key]
                         returnObj[key] = recurrsiveMock(property).mock();
                     }
                 }
-
             } else {
                 returnObj = currObject;
             }
@@ -531,6 +652,25 @@ const recurrsiveCompare = function (object) {
     return compare;
 }
 
+const evalContext = function (evalFn) {
+    let fn = new Middleware({
+        type: 'evalContext',
+        features: [
+            Evaluator
+        ],
+        options: {
+            evalFn: evalFn
+        },
+        evaluate: function (context) {
+            return evalFn(context);
+        },
+        toJsonString: function () {
+            return `evalContext(${JSON.stringify(this.options.evalFn)})`;
+        }
+    });
+    return fn;
+}
+
 const jsonpath = function (pathExpression) {
     let fn = new Middleware({
         type: 'jsonpath',
@@ -541,7 +681,7 @@ const jsonpath = function (pathExpression) {
             pathExpression: pathExpression
         },
         evaluate: function (context) {
-            return jp.query(context, this.options.pathExpression);
+            return jp.value(context, this.options.pathExpression);
         },
         toJsonString: function () {
             return `jsonpath(${JSON.stringify(this.options.pathExpression)})`;
@@ -609,8 +749,12 @@ const notAnyOf = function (...choices) {
 const value = function (props) {
     let stubValue = props.stub || props.client || props.consumer;
     let testValue = props.test || props.server || props.producer;
-    let evaluateFunction = props.evaluateFunction || function () {
-        return this.options.stubValue;
+    let evaluateFunction = props.evaluateFunction || function (context) {
+        if (context.isTest) {
+            return this.options.testValue;
+        } else {
+            return this.options.stubValue;
+        }
     };
 
     let consumerProducerValue = new Middleware({
@@ -621,6 +765,12 @@ const value = function (props) {
             testValue: testValue
         },
         evaluate: evaluateFunction,
+        evaluateStubValue: function () {
+            return this.options.stubValue;
+        },
+        evaluateTestValue: function () {
+            return this.options.testValue;
+        },
         toJsonString: function () {
             return `value({stub: ${recurrsiveToString(this.options.stubValue)}, test: ${recurrsiveToString(this.options.testValue)} })`;
         }
@@ -684,12 +834,17 @@ module.exports.functions = {
     uuid4,
     regex,
     jsonpath,
+    sum,
+    subtract,
+    multiply,
+    divide,
     recurrsiveCompare,
     recurrsiveEvaluate,
     recurrsiveMock,
     value,
     stubValue,
     testValue,
+    reqContextTransform,
     anyOf,
     notAnyOf
 };
