@@ -7,11 +7,14 @@ class Middleware {
         this.serialId = '8e2dc6a8-0b49-4506-b705-d2a47456376b'
         this.type = props.type || null;
         this.options = props.options || {};
-        this.toJsonString = props.toJsonString.bind(this);
+        this.toJsonString = props.toJsonString && props.toJsonString.bind(this);
 
         this.features = props.features || [];
         for (let feature of this.features) {
             feature.bindFunc(this, props);
+        }
+        if (props.bindFunc){
+            props.bindFunc(this, props);
         }
     }
 

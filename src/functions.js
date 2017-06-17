@@ -40,29 +40,36 @@ const float = function (options = {}) {
         },
         mock: function () {
             let max = undefined;
-            if (this.options.lt !== undefined && (max === undefined || this.options.lt < max)) {
-                max = this.options.lt;
-            }
-            if (this.options.lte !== undefined && (max === undefined || this.options.lte < max)) {
+            if (this.options.lte !== undefined) {
                 max = this.options.lte;
+            } else if (this.options.lt !== undefined) {
+                max = this.options.lt - 0.000001;
             }
+
             let min = undefined;
-            if (this.options.gt !== undefined && (min === undefined || this.options.gt > min)) {
-                min = this.options.gt;
-            }
-            if (this.options.gte !== undefined && (min === undefined || this.options.gte > min)) {
+            if (this.options.gte !== undefined) {
                 min = this.options.gte;
             }
+            if (this.options.gt !== undefined) {
+                min = this.options.gt + 0.000001;
+            }
+
             if (max !== undefined && min === undefined) {
-                min = max > 0 ? 0 : max - 100;
+                min = max > 100 ? 0 : max - 100;
             } else if (min !== undefined && max === undefined) {
-                max = min < 0 ? 0 : min + 100;
+                max = min < -100 ? 0 : min + 100;
             } else if (max === undefined && min === undefined) {
                 min = 0;
                 max = 100;
             }
 
-            return Math.random() * (max - min) + min;
+            var done = false;
+            while (!done) {
+                let mockValue = Math.random() * (max - min) + min;
+                if (this.compareFunc(mockValue)) {
+                    return mockValue;
+                }
+            }
         },
         toJsonString: function () {
             return `float(${JSON.stringify(this.options)})`;
@@ -106,29 +113,36 @@ const integer = function (options = {}) {
         },
         mock: function () {
             let max = undefined;
-            if (this.options.lt !== undefined && (max === undefined || this.options.lt < max)) {
-                max = this.options.lt;
-            }
-            if (this.options.lte !== undefined && (max === undefined || this.options.lte < max)) {
+            if (this.options.lte !== undefined) {
                 max = this.options.lte;
+            } else if (this.options.lt !== undefined) {
+                max = this.options.lt - 1;
             }
+
             let min = undefined;
-            if (this.options.gt !== undefined && (min === undefined || this.options.gt > min)) {
-                min = this.options.gt;
-            }
-            if (this.options.gte !== undefined && (min === undefined || this.options.gte > min)) {
+            if (this.options.gte !== undefined) {
                 min = this.options.gte;
             }
+            if (this.options.gt !== undefined) {
+                min = this.options.gt + 1;
+            }
+
             if (max !== undefined && min === undefined) {
-                min = max > 0 ? 0 : max - 100;
+                min = max > 100 ? 0 : max - 100;
             } else if (min !== undefined && max === undefined) {
-                max = min < 0 ? 0 : min + 100;
+                max = min < -100 ? 0 : min + 100;
             } else if (max === undefined && min === undefined) {
                 min = 0;
                 max = 100;
             }
 
-            return Math.floor(Math.random() * (max - min + 1)) + min;
+            var done = false;
+            while (!done) {
+                let mockValue = Math.floor(Math.random() * (max - min)) + min;
+                if (this.compareFunc(mockValue)) {
+                    return mockValue;
+                }
+            }
         },
         toJsonString: function () {
             return `integer(${JSON.stringify(this.options)})`;
@@ -144,35 +158,56 @@ const date = function (options = {}) {
             Comparable, Mockable
         ],
         options: {
-            format: options.format || moment.ISO_8601,
+            format: options.format,
             type: options.type,
             from: options.from,
             to: options.to
         },
         compareFunc: function (value) {
-            let dateValue = moment(value, this.options.format);
-            let timestamp = dateValue.valueOf();
-            if (!dateValue.isValid()) {
+            let fromDate = null;
+            console.log()
+            if (typeof this.options.from === 'string') {
+                fromDate = moment(this.options.from, moment.ISO_8601);
+            } else if (typeof this.options.from === 'number') {
+                fromDate = moment(this.options.from);
+            } else if (this.options.from) {
+                fromDate = moment(this.options.from);
+            }
+
+            let toDate = null;
+            if (typeof this.options.to === 'string') {
+                toDate = moment(this.options.to, moment.ISO_8601);
+            } else if (typeof this.options.to === 'number') {
+                toDate = moment(this.options.to);
+            } else if (this.options.to) {
+                toDate = moment(this.options.to);
+            }
+
+            moment.valid
+            let dateValue = moment(value, this.options.format || 'YYYY-MM-DD');
+            if (!dateValue.isValid() || dateValue.parsingFlags().unusedInput.length > 0) {
                 return false;
             }
-            if (this.options.from) {
-                let fromDate = moment(this.options.from);
-                if (fromDate.isValid()) {
-                    let fromTimestamp = fromDate.valueOf;
-                    if (timestamp < fromTimestamp) {
+            let timestamp = dateValue.valueOf();
+            let nowTimestamp = moment.now();
+
+            if (this.options.type === 'past') {
+                return timestamp < nowTimestamp;
+            } else if (this.options.type === 'future') {
+                return nowTimestamp < timestamp;
+            } else {
+                if (fromDate) {
+                    if (dateValue.isBefore(fromDate)) {
+                        return false;
+                    }
+                }
+                if (toDate) {
+                    if (dateValue.isAfter(toDate)) {
                         return false;
                     }
                 }
             }
-            if (this.options.to) {
-                let toDate = moment(this.options.to);
-                if (toDate.isValid()) {
-                    let toTimestamp = toDate.valueOf;
-                    if (timestamp > toTimestamp) {
-                        return false;
-                    }
-                }
-            }
+
             return true;
         },
         mock: function () {
@@ -181,12 +216,35 @@ const date = function (options = {}) {
                 dateStr = faker.date.past();
             } else if (this.options.type === 'future') {
                 dateStr = faker.date.future();
-            } else if (this.options.type === 'between') {
-                dateStr = faker.date.between(this.options.from, this.options.to);
+            } else if (this.options.type === 'between' || this.options.from || this.options.to) {
+
+                let fromDate = null;
+                if (typeof this.options.from === 'string') {
+                    fromDate = moment(this.options.from, moment.ISO_8601);
+                } else if (typeof this.options.from === 'number') {
+                    fromDate = moment(this.options.from);
+                } else if (this.options.from) {
+                    fromDate = moment(this.options.from);
+                } else {
+                    fromDate = moment('1900-01-01');
+                }
+
+                let toDate = null;
+                if (typeof this.options.to === 'string') {
+                    toDate = moment(this.options.to, moment.ISO_8601);
+                } else if (typeof this.options.to === 'number') {
+                    toDate = moment(this.options.to);
+                } else if (this.options.to) {
+                    toDate = moment(this.options.to);
+                } else {
+                    toDate = moment('2299-01-01');
+                }
+
+                dateStr = faker.date.between(fromDate, toDate);
             } else {
                 dateStr = faker.date.recent();
             }
-            return moment(dateStr).format(this.options.format);
+            return moment(dateStr).format(this.options.format || 'YYYY-MM-DD');
         },
         toJsonString: function () {
             return `date(${JSON.stringify(this.options)})`;
@@ -205,22 +263,23 @@ const text = function (options = {}) {
             type: options.type
         },
         compareFunc: function (value) {
-            if (value) {
-                let stringValue = typeof value === 'string' ? value : JSON.stringify(value);
-                let type = this.options.type;
-                let matchResult = null;
-                if (type === 'word') {
-                    matchResult = stringValue.match(/[A-Za-z\-]+/);
-                } else if (type === 'words') {
-                    matchResult = stringValue.match(/[A-Za-z\-' ]+/);
-                } else if (type === 'sentence') {
-                    matchResult = stringValue.match(/[A-Za-z\-'" ,.!?;]+/);
-                } else if (type === 'paragraphs') {
-                    matchResult = stringValue.match(/[A-Za-z\-'" ,.!?;]+/);
-                }
-                return matchResult && matchResult[0].length === stringValue.length;
+            if (typeof value !== 'string') {
+                return false;
             }
-            return false;
+            let type = this.options.type;
+            let matchResult = null;
+            if (type === 'word') {
+                matchResult = value.match(/[A-Za-z0-9\-]*/);
+            } else if (type === 'words') {
+                matchResult = value.match(/[A-Za-z0-9\-' ]*/);
+            } else if (type === 'sentence') {
+                matchResult = value.match(/[A-Za-z0-9\-'" ,.!?;]*/);
+            } else if (type === 'paragraphs') {
+                matchResult = value.match(/([A-Za-z0-9\-'" ,.!?;]|\s)*/g);
+            } else {
+                matchResult = value.match(/[A-Za-z0-9\-' ]*/);
+            }
+            return matchResult && matchResult[0].length === value.length;
         },
         mock: function () {
             let type = this.options.type;
@@ -250,12 +309,11 @@ const name = function () {
             Comparable, Mockable
         ],
         compareFunc: function (value) {
-            if (value) {
-                let stringValue = typeof value === 'string' ? value : JSON.stringify(value);
-                let matchResult = stringValue.match(/([A-Z][a-zA-Z0-9'. ]*)+/);
-                return matchResult && matchResult[0].length === stringValue.length;
+            if (typeof value !== 'string') {
+                return false;
             }
-            return false;
+            let matchResult = value.match(/([A-Za-z][a-zA-Z0-9'. ]*)+/);
+            return matchResult && matchResult[0].length === value.length || false;
         },
         mock: function () {
             return faker.name.findName();
@@ -274,12 +332,11 @@ const email = function () {
             Comparable, Mockable
         ],
         compareFunc: function (value) {
-            if (value) {
-                let stringValue = typeof value === 'string' ? value : JSON.stringify(value);
-                let matchResult = stringValue.match(/[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z0-9]+/);
-                return matchResult && matchResult[0].length === stringValue.length;
+            if (typeof value !== 'string') {
+                return false;
             }
-            return false;
+            let matchResult = value.match(/[a-zA-Z0-9_.]+@[a-zA-Z0-9_-]+\.[a-zA-Z]+/);
+            return matchResult && matchResult[0].length === value.length || false;
         },
         mock: function () {
             return faker.internet.email();
@@ -298,12 +355,13 @@ const phone = function () {
             Comparable, Mockable
         ],
         compareFunc: function (value) {
-            if (value) {
-                let stringValue = typeof value === 'string' ? value : JSON.stringify(value);
-                let matchResult = stringValue.match(/[0-9xX \-().]+/);
-                return matchResult && matchResult[0].length === stringValue.length;
+            if (typeof value !== 'string' && typeof value !== 'number') {
+                return false;
             }
-            return false;
+
+            let stringValue = typeof value === 'string' ? value : JSON.stringify(value);
+            let matchResult = stringValue.match(/[0-9xX \-().]+/);
+            return matchResult && matchResult[0].length === stringValue.length || false;
         },
         mock: function () {
             return faker.phone.phoneNumber();
@@ -322,12 +380,11 @@ const address = function () {
             Comparable, Mockable
         ],
         compareFunc: function (value) {
-            if (value) {
-                let stringValue = typeof value === 'string' ? value : JSON.stringify(value);
-                let matchResult = stringValue.match(/[0-9A-Za-z ,'.]+/);
-                return matchResult && matchResult[0].length === stringValue.length;
+            if (typeof value !== 'string') {
+                return false;
             }
-            return false;
+            let matchResult = value.match(/([0-9A-Za-z ,'.]|\s)+/g);
+            return matchResult && matchResult[0].length === value.length || false;
         },
         mock: function () {
             return faker.address.streetAddress();
@@ -346,12 +403,11 @@ const uuid4 = function () {
             Comparable, Mockable
         ],
         compareFunc: function (value) {
-            if (value) {
-                let stringValue = typeof value === 'string' ? value : JSON.stringify(value);
-                let matchResult = stringValue.match(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
-                return matchResult && matchResult[0].length === stringValue.length;
+            if (typeof value !== 'string') {
+                return false;
             }
-            return false;
+            let matchResult = value.match(/[0-9a-f]{8}\-[0-9a-f]{4}\-4[0-9a-f]{3}\-[89ab][0-9a-f]{3}\-[0-9a-f]{12}/);
+            return matchResult && matchResult[0].length === value.length || false;
         },
         mock: function () {
             return uuidV4();
@@ -373,13 +429,11 @@ const regex = function (pattern) {
             pattern: pattern
         },
         compareFunc: function (value) {
-            if (value) {
-                let stringValue = typeof value === 'string' ? value : JSON.stringify(value);
-                //let stringValue = JSON.stringify(value);
-                let matchResult = stringValue.match(this.options.pattern);
-                return matchResult && matchResult[0].length === stringValue.length;
+            if (typeof value !== 'string') {
+                return false;
             }
-            return false;
+            let matchResult = value.match(this.options.pattern);
+            return matchResult && matchResult[0].length === value.length || false;
         },
         mock: function () {
             return new RandExp(new RegExp(this.options.pattern)).gen();
@@ -401,8 +455,8 @@ const sum = function (...objects) {
             objects: objects
         },
         evaluate: function (context) {
-            let result;
-            let objs = this.options.objects || [];
+            let result = 0;
+            let objs = this.options.objects;
             objs.map((obj) => {
                 let retVal = recurrsiveEvaluate(obj).evaluate(context);
                 if (typeof retVal === 'string') {
@@ -410,17 +464,13 @@ const sum = function (...objects) {
                 }
                 return retVal;
             }).forEach((obj) => {
-                if (result === undefined) {
-                    result = obj;
-                } else {
-                    result = result + obj;
-                }
+                result = result + obj;
             });
 
             return result;
         },
         toJsonString: function () {
-            return 'sum(' + this.options.objects.map(obj=>recurrsiveToString(obj)).join(', ') + ')';
+            return 'sum(' + this.options.objects.map(obj => recurrsiveToString(obj)).join(', ') + ')';
         }
     });
     return sum;
@@ -437,7 +487,6 @@ const subtract = function (obj1, obj2) {
             obj2
         },
         evaluate: function (context) {
-            let result;
             let obj1 = recurrsiveEvaluate(this.options.obj1).evaluate(context);
             obj1 = typeof obj1 === 'string' ? parseFloat(obj1) : obj1;
             let obj2 = recurrsiveEvaluate(this.options.obj2).evaluate(context);
@@ -463,7 +512,7 @@ const multiply = function (...objects) {
         },
         evaluate: function (context) {
             let result;
-            let objs = this.options.objects || [];
+            let objs = this.options.objects;
             objs.map((obj) => {
                 let retVal = recurrsiveEvaluate(obj).evaluate(context);
                 if (typeof retVal === 'string') {
@@ -481,7 +530,7 @@ const multiply = function (...objects) {
             return result;
         },
         toJsonString: function () {
-            return 'multiply(' + this.options.objects.map(obj=>recurrsiveToString(obj)).join(', ') + ')';
+            return 'multiply(' + this.options.objects.map(obj => recurrsiveToString(obj)).join(', ') + ')';
         }
     });
     return multiply;
@@ -498,7 +547,6 @@ const divide = function (obj1, obj2) {
             obj2
         },
         evaluate: function (context) {
-            let result;
             let obj1 = recurrsiveEvaluate(this.options.obj1).evaluate(context);
             obj1 = typeof obj1 === 'string' ? parseFloat(obj1) : obj1;
             let obj2 = recurrsiveEvaluate(this.options.obj2).evaluate(context);
@@ -615,35 +663,32 @@ const recurrsiveCompare = function (object) {
             object: object
         },
         compareFunc: function (target) {
-            if (target) {
-                let match = true;
-                let currentObj = this.options.object;
-                if (typeof currentObj === 'object') {
-                    if (Middleware.isMiddleware(currentObj)) {
-                        currentObj = currentObj.execute({
-                            features: [Evaluator]
-                        });
-                    }
-                    if (Middleware.isMiddleware(currentObj) && currentObj.hasFeature(Comparable)) {
-                        return currentObj = currentObj.compareFunc(target);
-                    }
-
-                    for (let key in currentObj) {
-                        if (Middleware.isMiddleware(currentObj[key]) && currentObj[key].hasFeature(Comparable)) {
-                            match = match && currentObj[key].compareFunc(target[key]);
-                        } else {
-                            match = match && recurrsiveCompare(currentObj[key]).compareFunc(target[key]);
-                        }
-                        if (!match) {
-                            break;
-                        }
-                    }
-                    return match;
-                } else {
-                    return JSON.stringify(this.options.object) === JSON.stringify(target);
-                }
+            let currentObj = this.options.object;
+            
+            if (Array.isArray(currentObj) !== Array.isArray(target)) {
+                return false;
             }
-            return target === this.options.object;
+
+            if (typeof currentObj === 'object') {
+                if (Middleware.isMiddleware(currentObj)) {
+                    currentObj = currentObj.execute({
+                        features: [Evaluator]
+                    });
+                }
+                if (Middleware.isMiddleware(currentObj) && currentObj.hasFeature(Comparable)) {
+                    return currentObj = currentObj.compareFunc(target);
+                }
+
+                for (let key in currentObj) {
+                    let match = recurrsiveCompare(currentObj[key]).compareFunc(target[key]);
+                    if (!match) {
+                        return false;
+                    }
+                }
+                return true;
+            } else {
+                return JSON.stringify(this.options.object) === JSON.stringify(target);
+            }
         },
         toJsonString: function () {
             return 'recurrsiveCompare(' + recurrsiveToString(object) + ')';
@@ -665,7 +710,8 @@ const evalContext = function (evalFn) {
             return evalFn(context);
         },
         toJsonString: function () {
-            return `evalContext(${JSON.stringify(this.options.evalFn)})`;
+            let evalFnStr = this.options.evalFn && this.options.evalFn.toString();
+            return `evalContext(${evalFnStr})`;
         }
     });
     return fn;
@@ -689,7 +735,6 @@ const jsonpath = function (pathExpression) {
     });
     return fn;
 }
-
 
 const anyOf = function (...choices) {
     let fn = new Middleware({
@@ -765,14 +810,18 @@ const value = function (props) {
             testValue: testValue
         },
         evaluate: evaluateFunction,
-        evaluateStubValue: function () {
-            return this.options.stubValue;
+        evaluateStubValue: function (context) {
+            return recurrsiveEvaluate(this.options.stubValue).evaluate(context);
         },
-        evaluateTestValue: function () {
-            return this.options.testValue;
+        evaluateTestValue: function (context) {
+            return recurrsiveEvaluate(this.options.testValue).evaluate(context);
+        },
+        bindFunc: function(self, props) {
+            self.evaluateStubValue = props.evaluateStubValue.bind(self);
+            self.evaluateTestValue = props.evaluateTestValue.bind(self);
         },
         toJsonString: function () {
-            return `value({stub: ${recurrsiveToString(this.options.stubValue)}, test: ${recurrsiveToString(this.options.testValue)} })`;
+            return `value({ "stub": ${recurrsiveToString(this.options.stubValue)}, "test": ${recurrsiveToString(this.options.testValue)} })`;
         }
     });
     return consumerProducerValue;
@@ -844,7 +893,7 @@ module.exports.functions = {
     value,
     stubValue,
     testValue,
-    reqContextTransform,
+    evalContext,
     anyOf,
     notAnyOf
 };
