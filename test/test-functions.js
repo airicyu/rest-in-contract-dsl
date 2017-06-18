@@ -551,14 +551,15 @@ describe('DSL functions test', function () {
         expect(fnInstance.compareFunc('(852)23456789')).to.true;
         expect(fnInstance.compareFunc('(852) 23456789')).to.true;
         expect(fnInstance.compareFunc('852-23456789')).to.true;
+        expect(fnInstance.compareFunc('852-23456789 x1234')).to.true;
         expect(fnInstance.compareFunc('852-23456789x1234')).to.true;
-        expect(fnInstance.compareFunc('852-23456789X1234')).to.true;
         expect(fnInstance.compareFunc('a23456789')).to.false;
         expect(fnInstance.compareFunc('123,456,789')).to.false;
         expect(fnInstance.compareFunc(23456789)).to.true;
         expect(fnInstance.compareFunc(true)).to.false;
 
         var mockValue = fnInstance.mock();
+
         expect(mockValue.match(/[0-9xX \-().]+/)[0] === mockValue).to.true;
 
         expect(fnInstance.toJsonString()).to.equal('phone()');
@@ -613,8 +614,10 @@ describe('DSL functions test', function () {
         expect(fnInstance.compareFunc("0123,abcxyz,ABC")).to.true;
         expect(fnInstance.compareFunc('chan.mary@test.com')).to.false;
         expect(fnInstance.compareFunc('1234')).to.false;
-
         var mockValue = fnInstance.mock();
+        console.log(fnInstance.mock());
+        console.log(fnInstance.mock());
+        console.log(fnInstance.mock());
         expect(mockValue.match(/[0-9]{4},[a-z]{6},[A-Z]{3}/)[0] === mockValue).to.true;
 
         expect(fnInstance.toJsonString()).to.equal('regex("[0-9]{4},[a-z]{6},[A-Z]{3}")');
@@ -623,6 +626,27 @@ describe('DSL functions test', function () {
         expect(fnInstance.compareFunc("1234")).to.true;
         expect(fnInstance.compareFunc(1234)).to.false;
 
+        done();
+    });
+
+    it("Test jsonpath", function (done) {
+        var fnInstance = jsonpath("$.req.body");
+        expect(Middleware.isMiddleware(fnInstance)).to.be.true;
+        expect(fnInstance.hasFeature(Evaluator)).to.true;
+
+        expect(fnInstance.evaluate({
+            req: {
+                body: "100"
+            }
+        })).to.equals("100");
+
+        expect(fnInstance.evaluate({
+            req: {
+                body: 100
+            }
+        })).to.equals(100);
+
+        expect(fnInstance.toJsonString()).to.equal('jsonpath("$.req.body")');
         done();
     });
 
@@ -820,7 +844,7 @@ describe('DSL functions test', function () {
 
     it("Test anyOf", function (done) {
         var fnInstance = anyOf('a', 'b', 'c', 10);
-        
+
         expect(Middleware.isMiddleware(fnInstance)).to.be.true;
         expect(fnInstance.hasFeature(Comparable)).to.true;
         expect(fnInstance.hasFeature(Mockable)).to.true;
@@ -833,17 +857,17 @@ describe('DSL functions test', function () {
         expect(fnInstance.compareFunc(0)).to.false;
 
         var mockValue = fnInstance.mock();
-        for(var i=0; i<50; i++){
+        for (var i = 0; i < 50; i++) {
             expect(['a', 'b', 'c', 10].includes(mockValue)).to.true;
         }
         expect(fnInstance.toJsonString()).to.equal('anyOf("a", "b", "c", 10)');
 
         done();
     });
-    
+
     it("Test notAnyOf", function (done) {
         var fnInstance = notAnyOf('a', 'b', 'c', 10);
-        
+
         expect(Middleware.isMiddleware(fnInstance)).to.be.true;
         expect(fnInstance.hasFeature(Comparable)).to.true;
 
@@ -860,24 +884,24 @@ describe('DSL functions test', function () {
     });
 
     it("Test value", function (done) {
-        var fnInstance = value({ stub: 'a', test: 'b'});
-        
+        var fnInstance = value({ stub: 'a', test: 'b' });
+
         expect(Middleware.isMiddleware(fnInstance)).to.be.true;
         expect(fnInstance.hasFeature(Evaluator)).to.true;
 
         expect(fnInstance.evaluate({})).to.equals('a');
-        expect(fnInstance.evaluate({isTest: true})).to.equals('b');
+        expect(fnInstance.evaluate({ isTest: true })).to.equals('b');
         expect(fnInstance.evaluateStubValue({})).to.equals('a');
         expect(fnInstance.evaluateTestValue({})).to.equals('b');
-        
+
         expect(fnInstance.toJsonString()).to.equal('value({ "stub": "a", "test": "b" })');
 
 
 
-        fnInstance = value({ client: 'a', server: 'b'});
-        
+        fnInstance = value({ client: 'a', server: 'b' });
+
         expect(fnInstance.evaluate({})).to.equals('a');
-        expect(fnInstance.evaluate({isTest: true})).to.equals('b');
+        expect(fnInstance.evaluate({ isTest: true })).to.equals('b');
         expect(fnInstance.evaluateStubValue({})).to.equals('a');
         expect(fnInstance.evaluateTestValue({})).to.equals('b');
 
@@ -885,10 +909,10 @@ describe('DSL functions test', function () {
 
 
 
-        fnInstance = value({ consumer: 'a', producer: 'b'});
-        
+        fnInstance = value({ consumer: 'a', producer: 'b' });
+
         expect(fnInstance.evaluate({})).to.equals('a');
-        expect(fnInstance.evaluate({isTest: true})).to.equals('b');
+        expect(fnInstance.evaluate({ isTest: true })).to.equals('b');
         expect(fnInstance.evaluateStubValue({})).to.equals('a');
         expect(fnInstance.evaluateTestValue({})).to.equals('b');
 
@@ -896,95 +920,95 @@ describe('DSL functions test', function () {
 
 
 
-        fnInstance = value({ stub: 10, test: 20});
-        
+        fnInstance = value({ stub: 10, test: 20 });
+
         expect(fnInstance.evaluate({})).to.equals(10);
-        expect(fnInstance.evaluate({isTest: true})).to.equals(20);
+        expect(fnInstance.evaluate({ isTest: true })).to.equals(20);
         expect(fnInstance.evaluateStubValue({})).to.equals(10);
         expect(fnInstance.evaluateTestValue({})).to.equals(20);
-        
+
         expect(fnInstance.toJsonString()).to.equal('value({ "stub": 10, "test": 20 })');
 
         done();
     });
 
     it("Test stubValue", function (done) {
-        var fnInstance = stubValue({ stub: 'a', test: 'b'});
-        
+        var fnInstance = stubValue({ stub: 'a', test: 'b' });
+
         expect(Middleware.isMiddleware(fnInstance)).to.be.true;
         expect(fnInstance.hasFeature(Evaluator)).to.true;
 
         expect(fnInstance.evaluate({})).to.equals('a');
-        expect(fnInstance.evaluate({isTest: true})).to.equals('a');
-        
+        expect(fnInstance.evaluate({ isTest: true })).to.equals('a');
+
         expect(fnInstance.toJsonString()).to.equal('"a"');
 
 
 
-        fnInstance = stubValue({ client: 'a', server: 'b'});
-        
+        fnInstance = stubValue({ client: 'a', server: 'b' });
+
         expect(fnInstance.evaluate({})).to.equals('a');
-        expect(fnInstance.evaluate({isTest: true})).to.equals('a');
-        
+        expect(fnInstance.evaluate({ isTest: true })).to.equals('a');
+
         expect(fnInstance.toJsonString()).to.equal('"a"');
 
 
 
-        fnInstance = stubValue({ consumer: 'a', producer: 'b'});
-        
+        fnInstance = stubValue({ consumer: 'a', producer: 'b' });
+
         expect(fnInstance.evaluate({})).to.equals('a');
-        expect(fnInstance.evaluate({isTest: true})).to.equals('a');
-        
+        expect(fnInstance.evaluate({ isTest: true })).to.equals('a');
+
         expect(fnInstance.toJsonString()).to.equal('"a"');
 
 
 
-        fnInstance = stubValue({ stub: 10, test: 20});
-        
+        fnInstance = stubValue({ stub: 10, test: 20 });
+
         expect(fnInstance.evaluate({})).to.equals(10);
-        expect(fnInstance.evaluate({isTest: true})).to.equals(10);
-        
+        expect(fnInstance.evaluate({ isTest: true })).to.equals(10);
+
         expect(fnInstance.toJsonString()).to.equal('10');
 
         done();
     });
 
     it("Test testValue", function (done) {
-        var fnInstance = testValue({ stub: 'a', test: 'b'});
-        
+        var fnInstance = testValue({ stub: 'a', test: 'b' });
+
         expect(Middleware.isMiddleware(fnInstance)).to.be.true;
         expect(fnInstance.hasFeature(Evaluator)).to.true;
 
         expect(fnInstance.evaluate({})).to.equals('b');
-        expect(fnInstance.evaluate({isTest: true})).to.equals('b');
-        
+        expect(fnInstance.evaluate({ isTest: true })).to.equals('b');
+
         expect(fnInstance.toJsonString()).to.equal('"b"');
 
 
 
-        fnInstance = testValue({ client: 'a', server: 'b'});
-        
+        fnInstance = testValue({ client: 'a', server: 'b' });
+
         expect(fnInstance.evaluate({})).to.equals('b');
-        expect(fnInstance.evaluate({isTest: true})).to.equals('b');
-        
+        expect(fnInstance.evaluate({ isTest: true })).to.equals('b');
+
         expect(fnInstance.toJsonString()).to.equal('"b"');
 
 
 
-        fnInstance = testValue({ consumer: 'a', producer: 'b'});
-        
+        fnInstance = testValue({ consumer: 'a', producer: 'b' });
+
         expect(fnInstance.evaluate({})).to.equals('b');
-        expect(fnInstance.evaluate({isTest: true})).to.equals('b');
-        
+        expect(fnInstance.evaluate({ isTest: true })).to.equals('b');
+
         expect(fnInstance.toJsonString()).to.equal('"b"');
 
 
 
-        fnInstance = testValue({ stub: 10, test: 20});
-        
+        fnInstance = testValue({ stub: 10, test: 20 });
+
         expect(fnInstance.evaluate({})).to.equals(20);
-        expect(fnInstance.evaluate({isTest: true})).to.equals(20);
-        
+        expect(fnInstance.evaluate({ isTest: true })).to.equals(20);
+
         expect(fnInstance.toJsonString()).to.equal('20');
 
         done();
