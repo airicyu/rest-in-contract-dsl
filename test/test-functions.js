@@ -353,8 +353,8 @@ describe('DSL functions test', function () {
         fnInstance = date({
             format: 'YYYY-MM-DD HH:mm:ss',
             type: 'between',
-            from: new Date(moment('1999-01-02 01:01:01').valueOf()),
-            to: new Date(moment('2001-12-31 01:01:01').valueOf())
+            from: new Date(moment('1999-01-02 01:01:01+00').valueOf()),
+            to: new Date(moment('2001-12-31 01:01:01+00').valueOf())
         });
         expect(fnInstance.compareFunc('1999-01-01')).to.false;
         expect(fnInstance.compareFunc('1999-01-02')).to.false;
@@ -370,7 +370,7 @@ describe('DSL functions test', function () {
         expect(mockValueTimestamp).to.gte(moment('1999-01-02 01:01:01').valueOf());
         expect(mockValueTimestamp).to.lte(moment('2001-12-31 01:01:01').valueOf());
 
-        expect(fnInstance.toJsonString()).to.equal('date({"format":"YYYY-MM-DD HH:mm:ss","type":"between","from":"1999-01-01T17:01:01.000Z","to":"2001-12-30T17:01:01.000Z"})');
+        expect(fnInstance.toJsonString()).to.equal('date({"format":"YYYY-MM-DD HH:mm:ss","type":"between","from":"1999-01-02T01:01:01.000Z","to":"2001-12-31T01:01:01.000Z"})');
 
         //test from
         fnInstance = date({
