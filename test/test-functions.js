@@ -615,9 +615,6 @@ describe('DSL functions test', function () {
         expect(fnInstance.compareFunc('chan.mary@test.com')).to.false;
         expect(fnInstance.compareFunc('1234')).to.false;
         var mockValue = fnInstance.mock();
-        console.log(fnInstance.mock());
-        console.log(fnInstance.mock());
-        console.log(fnInstance.mock());
         expect(mockValue.match(/[0-9]{4},[a-z]{6},[A-Z]{3}/)[0] === mockValue).to.true;
 
         expect(fnInstance.toJsonString()).to.equal('regex("[0-9]{4},[a-z]{6},[A-Z]{3}")');
