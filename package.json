@@ -9,7 +9,7 @@
   "main": "index.js",
   "scripts": {
     "test": "nyc mocha",
-    "coverage": "nyc report --reporter=text-lcov > coverage.lcov && codecov"
+    "coverage": "nyc report --reporter=text-lcov > coverage/icov.info && codecov --file=./coverage/lcov.info"
   },
   "engines": {
     "node": "6 || 7 || 8"

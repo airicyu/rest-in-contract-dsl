@@ -3,7 +3,7 @@ node_js:
   - "6"
   - "7"
   - "8"
-install:
-  - npm install
-script: npm test
+install: npm install
+before_script: npm install -g mocha
+script: mocha
 after_success: npm run coverage
