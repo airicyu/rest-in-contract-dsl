@@ -1,6 +1,6 @@
 {
   "name": "rest-in-contract-dsl",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Contract script DSL for rest-in-contract.",
   "repository": {
     "type": "git",
@@ -12,7 +12,7 @@
     "coverage": "nyc report --reporter=text-lcov > coverage/icov.info && codecov --file=./coverage/lcov.info"
   },
   "engines": {
-    "node": "6 || 7 || 8"
+    "node": ">= 6.0.0"
   },
   "keywords": [
     "REST",
@@ -26,16 +26,16 @@
   "license": "Apache-2.0",
   "dependencies": {
     "faker": "~4.1.0",
-    "jsonpath": "~0.2.12",
-    "moment": "~2.18.1",
-    "randexp": "~0.4.6",
-    "uuid": "~3.1.0"
+    "jsonpath": "~1.0.0",
+    "moment": "~2.22.1",
+    "randexp": "~0.4.9",
+    "uuid": "~3.2.1"
   },
   "devDependencies": {
     "chai": "~4.1.2",
-    "codecov": "^2.3.0",
-    "mocha": "^3.5.0",
-    "nyc": "^11.1.0",
+    "codecov": "^3.0.1",
+    "mocha": "^5.1.1",
+    "nyc": "^11.7.1",
     "supertest": "~3.0.0"
   },
   "nyc": {

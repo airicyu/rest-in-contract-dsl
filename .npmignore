@@ -1,6 +1,5 @@
 .git
 .vscode
-.codeclimate.yml
 test
 coverage
 package-lock.json
