@@ -1,6 +1,6 @@
 {
   "name": "rest-in-contract-dsl",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Contract script DSL for rest-in-contract.",
   "repository": {
     "type": "git",
@@ -25,18 +25,18 @@
   "email": "airic.yu@gmail.com",
   "license": "Apache-2.0",
   "dependencies": {
-    "faker": "~4.1.0",
-    "jsonpath": "~1.0.0",
-    "moment": "~2.22.2",
-    "randexp": "~0.5.3",
-    "uuid": "~3.3.2"
+    "faker": "^4.1.0",
+    "jsonpath": "^1.0.0",
+    "moment": "^2.22.2",
+    "randexp": "^0.5.3",
+    "uuid": "^3.3.2"
   },
   "devDependencies": {
-    "chai": "~4.1.2",
+    "chai": "^4.1.2",
     "codecov": "^3.0.4",
     "mocha": "^5.2.0",
     "nyc": "^12.0.2",
-    "supertest": "~3.1.0"
+    "supertest": "^3.1.0"
   },
   "nyc": {
     "check-coverage": true,
